@@ -20,6 +20,7 @@
 *
 **/
 import java.nio.file.Files;
+import java.io.File;
 import java.net.Socket;
 import java.lang.Runnable;
 import java.io.*;
@@ -62,15 +63,33 @@ public void run()
       //
       String address;
       address = readHTTPRequest(is);
-      type = "text/html";
+      
+      //
+      // Code edited for program 2 here
+      // 
+      
+      if( address.endsWith(".jpg") )
+          type = "image/jpg";
+      else if( address.endsWith(".gif") )
+          type = "image/gif";
+      else if( address.endsWith(".png") )
+          type = "image/png";
+      else
+          type = "text/html";
+          
+      //
+      // Edited the parameters need to run the methods below
+      //
       
       writeHTTPHeader( os, type, address );
       writeContent( os, address );
+      
       os.flush();
       socket.close();
    } catch (Exception e) {
       System.err.println("Output error: "+e);
-   }
+   } // encd catch
+   
    System.err.println("Done handling connection.");
    return;
    
@@ -90,7 +109,11 @@ private String readHTTPRequest(InputStream is)
          System.err.println("Request line: ("+line+")");
          
          String localSpot = line.substring(0,3);
+         
+         //
          // Determine if the line is a GET
+         //
+         
          if( localSpot.equals( "GET" ) ) {
             local = line.substring( 4 );
             local = local.substring( 0, local.indexOf(" ") );
@@ -169,11 +192,13 @@ private void writeContent(OutputStream os, String address) throws Exception
    //
    address = address.substring( 1 );
    File file = new File( address );
-   
+   if( address.endsWith(".jpg") || address.endsWith(".png") || address.endsWith(".gif") ) {
+       os.write( extractBytes( address ) );
+   } // end if
    //
    // Checking to see if the file is in the stated location
    //
-   if( file.exists() && !file.isDirectory() ) {
+   else if( file.exists() && !file.isDirectory() ) {
       FileInputStream stream = new FileInputStream( address );
       BufferedReader read = new BufferedReader( new InputStreamReader( stream ) );
       
@@ -182,7 +207,7 @@ private void writeContent(OutputStream os, String address) throws Exception
       while(( filex = read.readLine() ) != null ) {
          // checking for tag <cs371date>
          if( filex.equals("<cs371date>") ) {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("DD/MM/YY");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/mm/yy HH:MM:SS");
             Date specific = new Date();
             String finalDate = dateFormat.format(specific);
             os.write(finalDate.getBytes());
@@ -207,5 +232,15 @@ private void writeContent(OutputStream os, String address) throws Exception
    } // end else
    
 } // end writeContent
+
+//
+// Added code to convert form an .jpg, .gif, .png into bytes[]
+//
+
+public static byte[] extractBytes(String ImageName) throws IOException {
+    File file = new File( ImageName );
+    byte[] fileContent = Files.readAllBytes( file.toPath() );
+    return fileContent;
+} // end extractBytes -------- not sure about this one --------------
 
 } // end class
